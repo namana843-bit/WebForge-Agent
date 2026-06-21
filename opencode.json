@@ -2,5 +2,34 @@
   "$schema": "https://opencode.ai/config.json",
   "skills": {
     "paths": [".opencode/skills"]
+  },
+  "agent": {
+    "architect": {
+      "description": "Designs architecture and plans features before coding",
+      "mode": "subagent",
+      "temperature": 0.2,
+      "permission": { "edit": "deny", "bash": "deny" },
+      "prompt": "You are a software architect. Before any coding, analyze requirements and design the solution architecture. Focus on: module structure, data flow, API design, error handling patterns, and dependency management. Output a clear plan with file paths and key interfaces."
+    },
+    "debugger": {
+      "description": "Debugs errors and runtime issues quickly",
+      "mode": "subagent",
+      "temperature": 0.1,
+      "permission": { "edit": "ask" },
+      "prompt": "You are a debugger. Given an error or bug report: 1) Analyze the traceback/error 2) Identify root cause 3) Propose fix 4) Apply the minimal fix needed. Always verify the fix works."
+    },
+    "tester": {
+      "description": "Writes and runs tests for features",
+      "mode": "subagent",
+      "temperature": 0.2,
+      "permission": { "bash": "allow" },
+      "prompt": "You are a QA engineer. Write thorough tests covering: happy path, edge cases, error handling. Use pytest. Run tests after writing and fix any failures. Keep tests fast and focused."
+    },
+    "scaffolder": {
+      "description": "Generates boilerplate and project structure fast",
+      "mode": "subagent",
+      "temperature": 0.3,
+      "prompt": "You are a scaffolder. Generate boilerplate code, new modules, or file structures quickly. Follow existing project patterns exactly. Minimize repetition and keep files focused."
+    }
   }
 }

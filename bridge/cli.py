@@ -8,12 +8,8 @@ import os
 from datetime import datetime
 from pathlib import Path
 
-try:
-    import urllib.request
-    import urllib.error
-except ImportError:
-    print("Error: urllib required (stdlib)", file=sys.stderr)
-    sys.exit(1)
+import urllib.request
+import urllib.error
 
 BRIDGE_URL = os.environ.get("WEBBRIDGE_URL", "http://127.0.0.1:10088")
 SCREENSHOT_DIR = Path("data/screenshots")
@@ -140,7 +136,10 @@ def cmd_text(args):
 
 
 def cmd_screenshot(args):
-    resp = api_call("screenshot", {"filename": args.name} if args.name else {})
+    name = args.name
+    if name and not name.endswith(".png"):
+        name += ".png"
+    resp = api_call("screenshot", {"filename": name} if name else {})
     if "error" in resp:
         print(f"Error: {resp['error']}")
     else:
@@ -148,7 +147,8 @@ def cmd_screenshot(args):
 
 
 def cmd_evaluate(args):
-    resp = api_call("evaluate", {"code": args.code})
+    code = " ".join(args.code)
+    resp = api_call("evaluate", {"code": code})
     if "error" in resp:
         print(f"Error: {resp['error']}")
     else:
@@ -186,7 +186,11 @@ def cmd_scroll(args):
     if "error" in resp:
         print(f"Error: {resp['error']}")
     else:
-        print("OK")
+        moved = resp.get("moved")
+        if moved is not None:
+            print(f"OK (moved {moved}px)")
+        else:
+            print("OK")
 
 
 def cmd_auto_scroll(args):
@@ -538,7 +542,7 @@ def main():
         elif cmd in ("screenshot", "save-as-pdf"):
             subparser.add_argument("--name", "-n")
         elif cmd == "evaluate":
-            subparser.add_argument("code", nargs="*")
+            subparser.add_argument("code", nargs="+")
         elif cmd == "html":
             subparser.add_argument("selector", nargs="?")
         elif cmd == "attr":

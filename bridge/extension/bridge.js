@@ -20,7 +20,12 @@
       try {
         const msg = JSON.parse(event.data);
         console.log('Received command:', msg);
-        
+
+        // Drop server keep-alive / control messages that have no action to execute
+        if (msg.type === 'pong' || !msg.action) {
+          return;
+        }
+
         chrome.runtime.sendMessage({ type: 'bridge_command', msg: msg }, (response) => {
           const err = chrome.runtime.lastError;
           if (err) {

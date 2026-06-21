@@ -46,6 +46,8 @@
         return { values: extractAttribute(args.selector, args.attr) };
       case 'evaluate':
         return { result: await evaluateCode(args.code) };
+      case 'scroll_stop':
+        return stopScroll();
       case 'upload':
         return await uploadFile(args.selector, args.filePath, args.fileData, args.fileName);
       default:
@@ -78,6 +80,16 @@
         if (c) children.push(c);
       }
 
+      // Generate a stable ref and STAMP it onto the DOM node so resolveElement() can find it later
+      let ref = undefined;
+      if (isInteractive) {
+        ref = node.getAttribute('data-wb-ref');
+        if (!ref) {
+          ref = `@e_${Math.random().toString(36).slice(2, 8)}`;
+          node.setAttribute('data-wb-ref', ref);
+        }
+      }
+
       const entry = {
         tag,
         role: role || undefined,
@@ -86,7 +98,7 @@
         visible,
         rect: visible ? { x: ~~rect.x, y: ~~rect.y, w: ~~rect.width, h: ~~rect.height } : undefined,
         interactive: isInteractive || undefined,
-        ref: isInteractive ? `@e_${Math.random().toString(36).slice(2, 8)}` : undefined,
+        ref,
       };
       if (children.length) entry.children = children;
       return entry;
@@ -159,14 +171,47 @@
   }
 
   function getScrollableContainer() {
-    let best = window;
-    let maxRange = 0;
+    // Priority selectors for common SPA platforms
+    const prioritySelectors = [
+      '[role="main"]',
+      'main',
+      '[data-pagelet="root"]',
+      '#facebook [role="feed"]',
+      '[data-pagelet="Feed"]',
+      '[aria-label="Home"]',
+      '[role="tabpanel"]',
+      '#react-root',
+      '#root',
+      '#app',
+      '.app',
+    ];
+    for (const sel of prioritySelectors) {
+      const el = document.querySelector(sel);
+      if (el) {
+        const style = window.getComputedStyle(el);
+        if (style.overflowY === 'auto' || style.overflowY === 'scroll') {
+          const range = el.scrollHeight - el.clientHeight;
+          if (range > 100) return el;
+        }
+        // Also check first scrollable child of the priority element
+        const children = el.querySelectorAll('*');
+        for (const child of children) {
+          const cs = window.getComputedStyle(child);
+          if (cs.overflowY === 'auto' || cs.overflowY === 'scroll') {
+            const cr = child.scrollHeight - child.clientHeight;
+            if (cr > 100) return child;
+          }
+        }
+      }
+    }
 
-    // Check window/document scrollable range
+    // Fallback: window scroll range
     const docEl = document.documentElement;
     const body = document.body;
     const docElOverflow = window.getComputedStyle(docEl).overflowY;
     const bodyOverflow = body ? window.getComputedStyle(body).overflowY : '';
+    let best = window;
+    let maxRange = 0;
 
     if (docElOverflow !== 'hidden' && bodyOverflow !== 'hidden') {
       const docHeight = Math.max(docEl.scrollHeight, body ? body.scrollHeight : 0);
@@ -177,7 +222,6 @@
     const all = document.querySelectorAll('*');
     for (const el of all) {
       if (el === document.documentElement || el === document.body) continue;
-
       const style = window.getComputedStyle(el);
       if (style.overflowY === 'auto' || style.overflowY === 'scroll') {
         const range = el.scrollHeight - el.clientHeight;
@@ -193,11 +237,15 @@
     return best;
   }
 
-  function scrollToElement(selector, x, y) {
+  async function scrollToElement(selector, x, y) {
     const container = getScrollableContainer();
     const isWin = container === window;
-    const currentScrollY = isWin ? window.scrollY : container.scrollTop;
-    const currentScrollX = isWin ? window.scrollX : container.scrollLeft;
+    const getScrollY = () => isWin ? window.scrollY : container.scrollTop;
+    const getScrollX = () => isWin ? window.scrollX : container.scrollLeft;
+
+    const scrollBy = (dx, dy) => {
+      container.scrollBy({ top: dy, left: dx, behavior: 'auto' });
+    };
 
     // If offsets (x or y) are provided, scroll the container or specified target element by the offsets
     if ((x !== undefined && x !== null) || (y !== undefined && y !== null)) {
@@ -207,26 +255,30 @@
       if (selector) {
         const el = resolveElement(selector);
         if (el) {
-          el.scrollBy({ top: scrollY, left: scrollX, behavior: 'smooth' });
-          return { success: true, mode: 'element-offset', tag: el.tagName.toLowerCase(), top: el.scrollTop, left: el.scrollLeft };
+          const before = el.scrollTop;
+          el.scrollBy({ top: scrollY, left: scrollX, behavior: 'auto' });
+          return { success: true, mode: 'element-offset', tag: el.tagName.toLowerCase(), top: el.scrollTop, left: el.scrollLeft, moved: el.scrollTop - before };
         }
       }
-      container.scrollBy({ top: scrollY, left: scrollX, behavior: 'smooth' });
-      return { success: true, mode: 'offset', top: currentScrollY, left: currentScrollX };
+      const before = getScrollY();
+      scrollBy(scrollX, scrollY);
+      return { success: true, mode: 'offset', top: getScrollY(), left: getScrollX(), moved: getScrollY() - before };
     }
 
     if (!selector) {
       // Page scroll: default down 500px
-      container.scrollBy({ top: 500, left: 0, behavior: 'smooth' });
-      return { success: true, mode: 'page', top: currentScrollY };
+      const before = getScrollY();
+      scrollBy(0, 500);
+      return { success: true, mode: 'page', top: getScrollY(), moved: getScrollY() - before };
     }
     const el = resolveElement(selector);
     if (!el) {
       // Element not found — fallback to page scroll
-      container.scrollBy({ top: 500, left: 0, behavior: 'smooth' });
-      return { success: true, mode: 'page-fallback', top: currentScrollY };
+      const before = getScrollY();
+      scrollBy(0, 500);
+      return { success: true, mode: 'page-fallback', top: getScrollY(), moved: getScrollY() - before };
     }
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.scrollIntoView({ behavior: 'auto', block: 'center' });
     return { success: true, mode: 'element', tag: el.tagName.toLowerCase() };
   }
 
@@ -319,6 +371,8 @@
     return { success: true, fileName: fileName || 'upload.bin' };
   }
 
+  let scrollIntervalId = null;
+
   async function autoScroll(durationSec, stepPx, intervalSec) {
     const container = getScrollableContainer();
     const isWin = container === window;
@@ -328,13 +382,14 @@
       let total = 0;
       let i = 0;
       let zeroScrollCount = 0;
-      const id = setInterval(() => {
+      scrollIntervalId = setInterval(() => {
         const currentScrollY = isWin ? window.scrollY : container.scrollTop;
         const totalHeight = isWin ? Math.max(document.documentElement.scrollHeight, document.body.scrollHeight) : container.scrollHeight;
         const viewportHeight = isWin ? window.innerHeight : container.clientHeight;
 
         if (i >= steps) {
-          clearInterval(id);
+          clearInterval(scrollIntervalId);
+          scrollIntervalId = null;
           resolve({ scrolled: total, reachedEnd: viewportHeight + currentScrollY >= totalHeight - 10 });
           return;
         }
@@ -348,7 +403,8 @@
         if (actual === 0) {
           zeroScrollCount++;
           if (zeroScrollCount >= 5) {
-            clearInterval(id);
+            clearInterval(scrollIntervalId);
+            scrollIntervalId = null;
             const reachedBottom = stepPx > 0 && (viewportHeight + currentScrollY >= totalHeight - 10);
             resolve({ scrolled: total, reachedEnd: reachedBottom || totalHeight <= viewportHeight });
             return;
@@ -358,5 +414,13 @@
         }
       }, ms);
     });
+  }
+
+  function stopScroll() {
+    if (scrollIntervalId) {
+      clearInterval(scrollIntervalId);
+      scrollIntervalId = null;
+    }
+    return { success: true, stopped: true };
   }
 })();

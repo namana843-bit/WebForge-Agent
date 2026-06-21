@@ -1,9 +1,7 @@
+﻿bridge.log
+*.json.bak
 __pycache__/
 *.pyc
-*.pyo
-data/screenshots/
-bridge/.bridge.pid
-bridge/data/screenshots/
-bridge/bridge.log
-vault/
 .env
+venv/
+node_modules/

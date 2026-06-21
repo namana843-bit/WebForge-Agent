@@ -42,11 +42,18 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btnSS').addEventListener('click', () => sendCmd('screenshot'));
   document.getElementById('btnURL').addEventListener('click', () => sendCmd('url'));
   document.getElementById('btnClear').addEventListener('click', clearLog);
+  document.getElementById('btnScrollFast').addEventListener('click', () => sendCmd('auto_scroll', { duration: 10, step: 800, interval: 0.03 }));
+  document.getElementById('btnScrollSlow').addEventListener('click', () => sendCmd('auto_scroll', { duration: 20, step: 200, interval: 0.3 }));
+  document.getElementById('btnScrollStop').addEventListener('click', () => sendCmd('scroll_stop'));
 });
 
 if (hasChrome) {
-  // Background status
+  // Background status — guard lastError in case service worker is still waking up
   chrome.runtime.sendMessage({ type: 'status' }, (res) => {
+    if (chrome.runtime.lastError) {
+      // Service worker was asleep; status will arrive via the connection broadcast
+      return;
+    }
     if (res?.connected) {
       statusDot.classList.add('connected');
       statusText.textContent = 'Connected';
@@ -54,6 +61,8 @@ if (hasChrome) {
   });
 
   // Listen for background broadcasts
+  // Return false explicitly so Chrome knows we won't call sendResponse,
+  // which suppresses the "message port closed" console warning.
   chrome.runtime.onMessage.addListener((msg) => {
     if (msg.type === 'connection') {
       if (msg.status === 'connected') {
@@ -66,6 +75,7 @@ if (hasChrome) {
         log('Bridge disconnected', 'err');
       }
     }
+    return false;
   });
 
   // Get active tab URL

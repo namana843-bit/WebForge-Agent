@@ -173,15 +173,6 @@ async function executeCommand(action, args) {
       case 'scroll': {
         const tab = await getActiveTab();
         if (!tab) return { error: 'No active tab' };
-        // If no selector but x/y provided, use evaluate for page scroll
-        if (!args.selector && (args.y || args.x)) {
-          const y = args.y || 0;
-          const x = args.x || 0;
-          return await sendToContent(tab.id, 'dom_command', {
-            action: 'evaluate',
-            args: { code: `window.scrollBy({top: ${y}, left: ${x}, behavior: 'smooth'}); window.scrollY` }
-          });
-        }
         return await sendToContent(tab.id, 'dom_command', { action: 'scroll', args });
       }
 
@@ -360,6 +351,13 @@ async function executeCommand(action, args) {
         const entry = netCapture.requests.find(r => r.id === reqId);
         if (!entry) return { error: 'Request not found' };
         return { success: true, request: entry };
+      }
+
+      // --- scroll_stop ---
+      case 'scroll_stop': {
+        const tab = await getActiveTab();
+        if (!tab) return { error: 'No active tab' };
+        return await sendToContent(tab.id, 'dom_command', { action: 'scroll_stop', args: {} });
       }
 
       // --- New: upload ---

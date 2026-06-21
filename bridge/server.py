@@ -54,6 +54,7 @@ async def wait_for_extension(max_wait=5):
     return False
 
 async def send_to_extension(action, args=None, timeout=30):
+    global extension_ws
     for attempt in range(5):
         ws = None
         async with extension_ws_lock:
@@ -102,7 +103,6 @@ async def send_to_extension(action, args=None, timeout=30):
 # --- WebSocket Handler (Extension → Server) ---
 async def handle_extension(websocket):
     global extension_ws
-    old_ws = extension_ws
     async with extension_ws_lock:
         extension_ws = websocket
     log("Extension connected")
@@ -265,7 +265,9 @@ async def handle_command(action, args):
         img_data = result.get("data", "")
         if img_data:
             ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-            fname = args.get("filename", f"screenshot_{ts}.png")
+            fname = args.get("filename") or f"screenshot_{ts}.png"
+            if not fname.endswith(".png") and not fname.endswith(".jpeg") and not fname.endswith(".jpg"):
+                fname += ".png"
             fpath = SCREENSHOT_DIR / fname
             fpath.write_bytes(base64.b64decode(img_data))
             return {"success": True, "path": str(fpath)}
@@ -297,7 +299,7 @@ async def handle_command(action, args):
             "x": args.get("x"),
             "y": args.get("y"),
         })
-        return {"success": True, "mode": result.get("mode"), "top": result.get("top")}
+        return {"success": True, "mode": result.get("mode"), "top": result.get("top"), "moved": result.get("moved")}
 
     elif action == "auto_scroll":
         result = await send_to_extension("auto_scroll", {
@@ -367,7 +369,9 @@ async def handle_command(action, args):
         img_data = result.get("data", "")
         if img_data:
             ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-            fname = args.get("filename", f"page_{ts}.png")
+            fname = args.get("filename") or f"page_{ts}.png"
+            if not fname.endswith(".png") and not fname.endswith(".jpeg") and not fname.endswith(".jpg"):
+                fname += ".png"
             fpath = SCREENSHOT_DIR / fname
             fpath.write_bytes(base64.b64decode(img_data))
             return {"success": True, "path": str(fpath), "note": "screenshot-based PDF"}
