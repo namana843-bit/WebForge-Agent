@@ -1,0 +1,12 @@
+{
+  "comment": "Copy the configuration object below to your Claude Desktop config (e.g. C:/Users/YourName/AppData/Roaming/Claude/claude_desktop_config.json) or your IDE (Cursor/VSCode MCP settings) to activate the WebBridge Browser MCP tools.",
+  
+  "mcpServers": {
+    "webbridge-mcp": {
+      "command": "python",
+      "args": [
+        "c:/Users/Naman/Downloads/broweser/mcp_server.py"
+      ]
+    }
+  }
+}

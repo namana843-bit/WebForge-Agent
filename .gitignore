@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+*.pyo
+data/screenshots/
+bridge/.bridge.pid
+bridge/data/screenshots/
+bridge/bridge.log
+vault/
+.env
