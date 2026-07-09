@@ -1,6 +1,6 @@
-# Opencode Browser Agent
+# WebForge-Agent
 
-Opencode Browser Agent is a modular, AI-powered browser automation and desktop control platform. It integrates a local Playwright runtime, a Chrome Extension WebSocket bridge server for extension-level web control, an intelligent Observe-Think-Decide-Act-Verify reasoning engine, a self-learning auto-healing subsystem, and a Model Context Protocol (MCP) server for external LLM clients (such as Claude Desktop, Cursor, and VSCode).
+WebForge-Agent is a modular, AI-powered browser automation and desktop control platform. It integrates a local Playwright runtime, a Chrome Extension WebSocket bridge server for extension-level web control, an intelligent Observe-Think-Decide-Act-Verify reasoning engine, a self-learning auto-healing subsystem, and a Model Context Protocol (MCP) server for external LLM clients (such as Claude Desktop, Cursor, and VSCode).
 
 ---
 
