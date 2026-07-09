@@ -230,10 +230,10 @@ def handle_call_tool(req_id, tool_name, arguments):
         res = api_call("fill", {"selector": arguments.get("selector"), "value": arguments.get("text")})
     elif tool_name == "hover":
         # Dispatch mouse events via JS evaluate
-        sel = arguments.get("selector")
+        sel = json.dumps(arguments.get("selector"))
         js_code = f"""
         (() => {{
-            const el = document.querySelector("{sel}");
+            const el = document.querySelector({sel});
             if (!el) return {{ error: "Element not found" }};
             el.dispatchEvent(new MouseEvent('mouseover', {{ bubbles: true }}));
             el.dispatchEvent(new MouseEvent('mouseenter', {{ bubbles: true }}));
@@ -244,10 +244,10 @@ def handle_call_tool(req_id, tool_name, arguments):
     elif tool_name == "scroll":
         res = api_call("scroll", {"x": arguments.get("x"), "y": arguments.get("y")})
     elif tool_name == "drag":
-        sel = arguments.get("selector")
+        sel = json.dumps(arguments.get("selector"))
         js_code = f"""
         (() => {{
-            const el = document.querySelector("{sel}");
+            const el = document.querySelector({sel});
             if (!el) return {{ error: "Element not found" }};
             el.dispatchEvent(new DragEvent('dragstart', {{ bubbles: true }}));
             return {{ success: true }};
@@ -255,10 +255,10 @@ def handle_call_tool(req_id, tool_name, arguments):
         """
         res = api_call("evaluate", {"code": js_code})
     elif tool_name == "drop":
-        sel = arguments.get("selector")
+        sel = json.dumps(arguments.get("selector"))
         js_code = f"""
         (() => {{
-            const el = document.querySelector("{sel}");
+            const el = document.querySelector({sel});
             if (!el) return {{ error: "Element not found" }};
             el.dispatchEvent(new DragEvent('dragover', {{ bubbles: true }}));
             el.dispatchEvent(new DragEvent('drop', {{ bubbles: true }}));

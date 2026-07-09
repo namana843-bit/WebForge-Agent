@@ -131,9 +131,10 @@ class VisualEnhancementsPlugin(BrowserPlugin):
         filepath = output_dir / filename
         
         # Get bounding box of the element
+        escaped_selector = json.dumps(selector)
         js_code = f"""
         (() => {{
-            const el = document.querySelector("{selector}");
+            const el = document.querySelector({escaped_selector});
             if (!el) return null;
             const r = el.getBoundingClientRect();
             return {{
