@@ -10,10 +10,11 @@
     "storage",
     "webRequest",
     "downloads",
-    "alarms",
     "windows",
     "debugger",
-    "tabGroups"
+    "tabGroups",
+    "offscreen",
+    "cookies"
   ],
   "host_permissions": ["<all_urls>"],
   "background": {

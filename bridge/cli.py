@@ -334,10 +334,18 @@ def cmd_save_as_pdf(args):
             print(f"Note: {note}")
 
 
+def cmd_reload(args):
+    resp = api_call("reload_extension")
+    if "error" in resp:
+        print(f"Error: {resp['error']}")
+    else:
+        print("Extension reload triggered. Reconnecting...")
+
+
 def cmd_server(args):
+    import subprocess
     sub = args.subcommand
     if sub == "start":
-        import subprocess
         script = Path(__file__).parent / "server.py"
         proc = subprocess.Popen(
             [sys.executable, str(script), "--log-file", "bridge.log"],
@@ -348,7 +356,6 @@ def cmd_server(args):
         print(f"Server started (PID: {proc.pid})")
     elif sub == "stop":
         stopped = False
-        # Try graceful shutdown via API first
         try:
             urllib.request.urlopen(
                 urllib.request.Request(f"{BRIDGE_URL}/restart", method="POST"),
@@ -357,18 +364,17 @@ def cmd_server(args):
             stopped = True
         except Exception:
             pass
-        # Kill by PID file if available (targeted, safe)
         if PID_FILE.exists():
             try:
-                pid = int(PID_FILE.read_text().strip())
-                import subprocess
+                raw = PID_FILE.read_bytes()
+                pid = int(raw.strip())
                 subprocess.run(
                     ["taskkill", "/f", "/pid", str(pid)],
                     capture_output=True, timeout=5,
                 )
                 PID_FILE.unlink(missing_ok=True)
                 stopped = True
-            except (ValueError, FileNotFoundError, subprocess.TimeoutExpired):
+            except Exception:
                 PID_FILE.unlink(missing_ok=True)
         if not stopped:
             print("Warning: could not stop server (may not be running)")
@@ -424,6 +430,46 @@ def cmd_extract(args):
     print(json.dumps(result, indent=2, ensure_ascii=False))
 
 
+def cmd_send_whatsapp(args):
+    resp = api_call("send_whatsapp", {"contact": args.contact, "message": args.message})
+    if "error" in resp:
+        print(f"Error: {resp['error']}")
+    else:
+        print(f"Sent to {resp.get('contact', args.contact)}: {resp.get('message', '')[:60]}")
+        if resp.get('status'):
+            print(f"Status: {resp['status']}")
+
+
+def cmd_batch_send(args):
+    import csv
+    messages = []
+    if args.file:
+        with open(args.file, newline='', encoding='utf-8-sig') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                messages.append({"contact": (row.get("contact") or "").strip(), "message": (row.get("message") or "").strip()})
+    if args.contact and args.message:
+        messages.append({"contact": args.contact, "message": args.message})
+    if not messages:
+        print("Error: no messages to send. Provide --contact/--message or --file")
+        return
+    resp = api_call("batch_send", {"messages": messages}, raw=True)
+    if "error" in resp:
+        print(f"Error: {resp['error']}")
+        return
+    results = resp.get("results", [])
+    print(f"Batch: {resp.get('sent', 0)}/{resp.get('total', len(messages))} sent")
+    for i, r in enumerate(results):
+        status = r.get("status", "?")
+        contact = r.get("contact", "?")
+        msg = r.get("message", "")[:40]
+        err = r.get("error", "")
+        line = f"  [{i+1}] {contact}: {msg} -> {status}"
+        if err:
+            line += f" (error: {err})"
+        print(line)
+
+
 def cmd_help(args):
     print("""WebBridge CLI - Browser control for opencode
 
@@ -450,6 +496,7 @@ Commands:
   title                     Get page title
   extract <json-schema>     Extract structured data
   upload <selector> <file>  Upload file to input element
+  send-whatsapp <contact> <message>  Send WhatsApp message to contact
   network <sub> [options]   Network capture (start|stop|list|detail --id N)
   server <sub>              Server management (start|stop|restart|logs)
   help                      Show this help
@@ -469,6 +516,7 @@ Examples:
   python cli.py network start
   python cli.py network list
   python cli.py upload 'input[type=file]' ./photo.jpg
+  python cli.py send-whatsapp "Pratik Mumbai" "Hello from WebBridge!"
   python cli.py extract '{"prices":".price","links":"a::attr(href)"}'""")
 
 
@@ -507,8 +555,11 @@ def main():
         "title": cmd_title,
         "extract": cmd_extract,
         "upload": cmd_upload,
+        "send-whatsapp": cmd_send_whatsapp,
+        "batch-send": cmd_batch_send,
         "network": cmd_network,
         "server": cmd_server,
+        "reload": cmd_reload,
         "help": cmd_help,
     }
 
@@ -553,9 +604,18 @@ def main():
         elif cmd == "upload":
             subparser.add_argument("selector")
             subparser.add_argument("file")
+        elif cmd == "send-whatsapp":
+            subparser.add_argument("contact")
+            subparser.add_argument("message")
+        elif cmd == "batch-send":
+            subparser.add_argument("--contact", default=None, help="Single contact to send to")
+            subparser.add_argument("--message", default=None, help="Single message to send")
+            subparser.add_argument("--file", "-f", default=None, help="CSV file with contact,message columns")
         elif cmd == "network":
             subparser.add_argument("subcommand", choices=["start", "stop", "list", "detail"])
             subparser.add_argument("--id", dest="request_id", default=None)
+        elif cmd == "reload":
+            pass
         elif cmd == "server":
             subparser.add_argument("subcommand", choices=["start", "stop", "restart", "logs"])
         sub_cfg = subparser.parse_args(cmd_args)

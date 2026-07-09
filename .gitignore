@@ -1,7 +1,9 @@
-﻿bridge.log
+bridge.log
 *.json.bak
 __pycache__/
 *.pyc
 .env
 venv/
 node_modules/
+.claude/
+.pytest_cache/

@@ -1,0 +1,38 @@
+{
+  "files_scanned": 15,
+  "total_findings": 4,
+  "findings": [
+    {
+      "file": "agent.py",
+      "line_number": 118,
+      "code": "def __init__(self, bridge_url=\"http://127.0.0.1:10088\"):",
+      "severity": "LOW",
+      "rule": "Insecure HTTP URL",
+      "description": "Insecure HTTP connections are vulnerable to man-in-the-middle (MITM) attacks. Use HTTPS instead."
+    },
+    {
+      "file": "mcp_server.py",
+      "line_number": 10,
+      "code": "BRIDGE_URL = \"http://127.0.0.1:10088\"",
+      "severity": "LOW",
+      "rule": "Insecure HTTP URL",
+      "description": "Insecure HTTP connections are vulnerable to man-in-the-middle (MITM) attacks. Use HTTPS instead."
+    },
+    {
+      "file": "bridge\\cli.py",
+      "line_number": 14,
+      "code": "BRIDGE_URL = os.environ.get(\"WEBBRIDGE_URL\", \"http://127.0.0.1:10088\")",
+      "severity": "LOW",
+      "rule": "Insecure HTTP URL",
+      "description": "Insecure HTTP connections are vulnerable to man-in-the-middle (MITM) attacks. Use HTTPS instead."
+    },
+    {
+      "file": "bridge\\server.py",
+      "line_number": 487,
+      "code": "log.info(\"HTTP server on http://127.0.0.1:%d\", HTTP_PORT)",
+      "severity": "LOW",
+      "rule": "Insecure HTTP URL",
+      "description": "Insecure HTTP connections are vulnerable to man-in-the-middle (MITM) attacks. Use HTTPS instead."
+    }
+  ]
+}

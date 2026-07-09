@@ -3,11 +3,14 @@
 
 import sys
 import json
+import time
 import urllib.request
 import urllib.error
 import traceback
+from datetime import datetime
 
 BRIDGE_URL = "http://127.0.0.1:10088"
+COMMAND_HISTORY = []
 
 def api_call(action, args=None):
     payload = json.dumps({"action": action, "args": args or {}}).encode("utf-8")
@@ -24,7 +27,6 @@ def api_call(action, args=None):
         return {"error": f"Failed to reach WebBridge server: {e}"}
 
 def handle_initialize(req_id, params):
-    # Respond to MCP handshake
     response = {
         "jsonrpc": "2.0",
         "id": req_id,
@@ -44,82 +46,165 @@ def handle_initialize(req_id, params):
 def handle_list_tools(req_id):
     tools = [
         {
-            "name": "navigate",
-            "description": "Open a website/URL in Chrome.",
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "url": {"type": "string", "description": "The URL to navigate to."}
-                },
-                "required": ["url"]
-            }
-        },
-        {
             "name": "click",
-            "description": "Click an element on the webpage.",
+            "description": "Click an element on the active page.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "selector": {"type": "string", "description": "CSS selector, XPath, or @e ref of the element to click."}
+                    "selector": {"type": "string", "description": "CSS selector or XPath of element."}
                 },
                 "required": ["selector"]
             }
         },
         {
-            "name": "fill",
-            "description": "Type text into a webpage input field.",
+            "name": "type",
+            "description": "Type text into a target input element.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "selector": {"type": "string", "description": "CSS selector or @e ref of the input field."},
-                    "value": {"type": "string", "description": "The text value to input."}
+                    "selector": {"type": "string", "description": "CSS selector of target input."},
+                    "text": {"type": "string", "description": "Text value to type."}
                 },
-                "required": ["selector", "value"]
+                "required": ["selector", "text"]
+            }
+        },
+        {
+            "name": "hover",
+            "description": "Hover mouse cursor over target selector.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "selector": {"type": "string", "description": "CSS selector of element to hover over."}
+                },
+                "required": ["selector"]
             }
         },
         {
             "name": "scroll",
-            "description": "Scroll the page or scroll to a specific element.",
+            "description": "Scroll the active page.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "selector": {"type": "string", "description": "Optional CSS selector to scroll to."},
-                    "x": {"type": "integer", "description": "Optional horizontal pixel scroll offset."},
-                    "y": {"type": "integer", "description": "Optional vertical pixel scroll offset."}
+                    "x": {"type": "integer", "description": "Horizontal scroll offset."},
+                    "y": {"type": "integer", "description": "Vertical scroll offset."}
                 }
             }
         },
         {
-            "name": "auto_scroll",
-            "description": "Gradually auto-scroll down the webpage.",
+            "name": "drag",
+            "description": "Initiate drag-start event on selector.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "duration": {"type": "number", "description": "Scroll duration in seconds (default: 5)."},
-                    "step": {"type": "integer", "description": "Pixels scrolled per step (default: 300)."}
-                }
+                    "selector": {"type": "string", "description": "CSS selector to drag."}
+                },
+                "required": ["selector"]
+            }
+        },
+        {
+            "name": "drop",
+            "description": "Perform drop event on selector.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "selector": {"type": "string", "description": "CSS selector to drop onto."}
+                },
+                "required": ["selector"]
+            }
+        },
+        {
+            "name": "navigate",
+            "description": "Navigate to target web URL.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "url": {"type": "string", "description": "Web URL to open."}
+                },
+                "required": ["url"]
+            }
+        },
+        {
+            "name": "wait",
+            "description": "Delay/wait execution for a number of seconds.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "seconds": {"type": "number", "description": "Seconds to delay."}
+                },
+                "required": ["seconds"]
             }
         },
         {
             "name": "screenshot",
-            "description": "Take a screenshot of the visible area of the active page.",
+            "description": "Capture screen snapshot.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "name": {"type": "string", "description": "Optional filename (e.g. page.png)."}
+                    "name": {"type": "string", "description": "Output filename."}
                 }
             }
         },
         {
-            "name": "get_snapshot",
-            "description": "Get the simplified accessibility tree of the current webpage.",
+            "name": "extract",
+            "description": "Extract data using JSON schema extraction.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "schema": {"type": "object", "description": "JSON schema layout map."}
+                },
+                "required": ["schema"]
+            }
+        },
+        {
+            "name": "pdf",
+            "description": "Save active page layout as PDF.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string", "description": "PDF filename."}
+                }
+            }
+        },
+        {
+            "name": "download",
+            "description": "List files inside the download folder.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {}
+            }
+        },
+        {
+            "name": "upload",
+            "description": "Upload a local file to target file input.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "selector": {"type": "string", "description": "CSS selector of file input."},
+                    "file_path": {"type": "string", "description": "Absolute file path."}
+                },
+                "required": ["selector", "file_path"]
+            }
+        },
+        {
+            "name": "press",
+            "description": "Press a keyboard button.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "key": {"type": "string", "description": "Key identifier (e.g. Enter, Escape, ArrowDown)."}
+                },
+                "required": ["key"]
+            }
+        },
+        {
+            "name": "history",
+            "description": "Get log record history of executed commands in this session.",
             "inputSchema": {
                 "type": "object",
                 "properties": {}
             }
         }
     ]
-    
     return {
         "jsonrpc": "2.0",
         "id": req_id,
@@ -129,29 +214,82 @@ def handle_list_tools(req_id):
     }
 
 def handle_call_tool(req_id, tool_name, arguments):
-    # Route tool execution to corresponding WebBridge API action
+    # Log to history
+    COMMAND_HISTORY.append({
+        "timestamp": datetime.now().isoformat(),
+        "tool": tool_name,
+        "arguments": arguments
+    })
+
     res = None
     if tool_name == "navigate":
         res = api_call("navigate", {"url": arguments.get("url")})
     elif tool_name == "click":
         res = api_call("click", {"selector": arguments.get("selector")})
-    elif tool_name == "fill":
-        res = api_call("fill", {"selector": arguments.get("selector"), "value": arguments.get("value")})
+    elif tool_name == "type":
+        res = api_call("fill", {"selector": arguments.get("selector"), "value": arguments.get("text")})
+    elif tool_name == "hover":
+        # Dispatch mouse events via JS evaluate
+        sel = arguments.get("selector")
+        js_code = f"""
+        (() => {{
+            const el = document.querySelector("{sel}");
+            if (!el) return {{ error: "Element not found" }};
+            el.dispatchEvent(new MouseEvent('mouseover', {{ bubbles: true }}));
+            el.dispatchEvent(new MouseEvent('mouseenter', {{ bubbles: true }}));
+            return {{ success: true }};
+        }})()
+        """
+        res = api_call("evaluate", {"code": js_code})
     elif tool_name == "scroll":
-        res = api_call("scroll", {
-            "selector": arguments.get("selector"),
-            "x": arguments.get("x"),
-            "y": arguments.get("y")
-        })
-    elif tool_name == "auto_scroll":
-        res = api_call("auto_scroll", {
-            "duration": arguments.get("duration", 5),
-            "step": arguments.get("step", 300)
-        })
+        res = api_call("scroll", {"x": arguments.get("x"), "y": arguments.get("y")})
+    elif tool_name == "drag":
+        sel = arguments.get("selector")
+        js_code = f"""
+        (() => {{
+            const el = document.querySelector("{sel}");
+            if (!el) return {{ error: "Element not found" }};
+            el.dispatchEvent(new DragEvent('dragstart', {{ bubbles: true }}));
+            return {{ success: true }};
+        }})()
+        """
+        res = api_call("evaluate", {"code": js_code})
+    elif tool_name == "drop":
+        sel = arguments.get("selector")
+        js_code = f"""
+        (() => {{
+            const el = document.querySelector("{sel}");
+            if (!el) return {{ error: "Element not found" }};
+            el.dispatchEvent(new DragEvent('dragover', {{ bubbles: true }}));
+            el.dispatchEvent(new DragEvent('drop', {{ bubbles: true }}));
+            return {{ success: true }};
+        }})()
+        """
+        res = api_call("evaluate", {"code": js_code})
+    elif tool_name == "wait":
+        secs = float(arguments.get("seconds", 1.0))
+        time.sleep(secs)
+        res = {"success": True, "waited": secs}
     elif tool_name == "screenshot":
         res = api_call("screenshot", {"filename": arguments.get("name")})
-    elif tool_name == "get_snapshot":
-        res = api_call("snapshot")
+    elif tool_name == "extract":
+        res = api_call("extract", {"schema": arguments.get("schema")})
+    elif tool_name == "pdf":
+        res = api_call("save-as-pdf", {"filename": arguments.get("name")})
+    elif tool_name == "download":
+        import os
+        from pathlib import Path
+        down_dir = Path("data/downloads")
+        files = []
+        if down_dir.exists():
+            files = [f.name for f in down_dir.iterdir() if f.is_file()]
+        res = {"success": True, "downloads": files}
+    elif tool_name == "upload":
+        res = api_call("upload", {"selector": arguments.get("selector"), "file": arguments.get("file_path")})
+    elif tool_name == "press":
+        res = api_call("pressKey", {"key": arguments.get("key")})
+    elif tool_name == "history":
+        res = {"success": True, "history": COMMAND_HISTORY}
     else:
         return {
             "jsonrpc": "2.0",
@@ -159,7 +297,6 @@ def handle_call_tool(req_id, tool_name, arguments):
             "error": {"code": -32601, "message": f"Tool not found: {tool_name}"}
         }
 
-    # Format result for MCP response
     is_error = "error" in res
     text_content = json.dumps(res, indent=2) if not is_error else res["error"]
     
@@ -178,7 +315,6 @@ def handle_call_tool(req_id, tool_name, arguments):
     }
 
 def main():
-    # Loop on stdin to process incoming JSON-RPC requests
     for line in sys.stdin:
         if not line.strip():
             continue
@@ -188,7 +324,6 @@ def main():
             method = req.get("method")
             params = req.get("params", {})
 
-            # Handle requests
             if method == "initialize":
                 resp = handle_initialize(req_id, params)
             elif method == "tools/list":
@@ -198,7 +333,6 @@ def main():
                 arguments = params.get("arguments", {})
                 resp = handle_call_tool(req_id, tool_name, arguments)
             elif method.startswith("notifications/"):
-                # Notifications do not require responses
                 continue
             else:
                 resp = {
@@ -206,13 +340,10 @@ def main():
                     "id": req_id,
                     "error": {"code": -32601, "message": f"Method not found: {method}"}
                 }
-            
-            # Send response to stdout
             sys.stdout.write(json.dumps(resp) + "\n")
             sys.stdout.flush()
 
         except Exception as e:
-            # Handle parsing or execution errors gracefully
             err_resp = {
                 "jsonrpc": "2.0",
                 "error": {
