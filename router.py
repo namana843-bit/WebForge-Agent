@@ -76,15 +76,5 @@ class PluginRouter:
                 return plugin.execute(action, **kwargs)
             else:
                 return {"error": "Accessibility plugin not registered"}
-
-        elif action in ["execute", "understand"]:
-            if "page_agent" in self.plugins:
-                plugin = self.plugins["page_agent"]
-                method = getattr(plugin, action)
-                sig = inspect.signature(method)
-                pass_args = {k: v for k, v in kwargs.items() if k in sig.parameters}
-                return method(**pass_args)
-            else:
-                return {"error": "Page-Agent plugin not registered for high-level intelligent actions"}
-
         return {"error": f"Unknown action: {action}"}
+

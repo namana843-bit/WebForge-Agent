@@ -61,57 +61,6 @@ class BridgePlugin(BrowserPlugin):
     def scroll(self, selector=None, x=None, y=None):
         return self.execute("scroll", selector=selector, x=x, y=y)
 
-
-class PageAgentPlugin(BrowserPlugin):
-    """Plugin implementing Alibaba Page-Agent browser intelligence."""
-
-    def __init__(self, agent):
-        self.agent = agent
-
-    def _call_page_agent(self, method: str, arg: str, api_key: str, base_url: str, model: str):
-        escaped_arg = arg.replace('"', '\\"')
-        
-        js_code = f"""
-        (async () => {{
-            if (typeof PageAgent === 'undefined') {{
-                const loadScript = () => new Promise((resolve, reject) => {{
-                    const s = document.createElement('script');
-                    s.src = "https://cdn.jsdelivr.net/npm/page-agent@latest/dist/iife/page-agent.demo.js";
-                    s.crossOrigin = "anonymous";
-                    s.onload = () => resolve();
-                    s.onerror = () => reject(new Error("Failed to load Alibaba Page-Agent script"));
-                    document.head.appendChild(s);
-                }});
-                await loadScript();
-            }}
-            if (!window.__pageAgentInstance) {{
-                window.__pageAgentInstance = new PageAgent({{
-                    model: "{model}",
-                    baseURL: "{base_url}",
-                    apiKey: "{api_key}"
-                }});
-            }}
-            return await window.__pageAgentInstance.{method}("{escaped_arg}");
-        }})()
-        """
-        print(f"Running Page-Agent command '{method}' with: {arg[:60]}...")
-        return self.agent.bridge.execute("evaluate", code=js_code)
-
-    def execute(self, instruction: str, api_key: str = None, base_url: str = None, model: str = None):
-        """Execute a natural language task using Alibaba Page-Agent."""
-        key = api_key or os.environ.get("PAGE_AGENT_API_KEY", "demo")
-        url = base_url or os.environ.get("PAGE_AGENT_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1")
-        mdl = model or os.environ.get("PAGE_AGENT_MODEL", "qwen3.5-plus")
-        return self._call_page_agent("execute", instruction, key, url, mdl)
-
-    def understand(self, prompt: str, api_key: str = None, base_url: str = None, model: str = None):
-        """Ask the Alibaba Page-Agent a natural language question about the page state."""
-        key = api_key or os.environ.get("PAGE_AGENT_API_KEY", "demo")
-        url = base_url or os.environ.get("PAGE_AGENT_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1")
-        mdl = model or os.environ.get("PAGE_AGENT_MODEL", "qwen3.5-plus")
-        return self._call_page_agent("understand", prompt, key, url, mdl)
-
-
 class BrowserAgent:
     """Orchestrator class coordinating plugins for browser automation and intelligence."""
 
@@ -122,12 +71,10 @@ class BrowserAgent:
         
         # Plugins registration
         self.bridge = BridgePlugin(self)
-        self.page_agent = PageAgentPlugin(self)
         
         # Plugin Router
         self.router = PluginRouter()
         self.router.register_plugin("bridge", self.bridge)
-        self.router.register_plugin("page_agent", self.page_agent)
         
         # Desktop plugin
         self.desktop = DesktopPlugin(self)
