@@ -46,7 +46,7 @@ class BrowserTool(ABC):
         pass
 
     @abstractmethod
-    async def execute(self, page, arguments: Dict[str, Any]) -> ToolResult:
+    async def execute(self, page, arguments: Dict[str, Any]) -> Dict[str, Any]:
         """Executes the action on Playwright page context."""
         pass
 
