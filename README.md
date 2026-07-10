@@ -35,11 +35,11 @@ The system operates as a client-server-extension topology. The agent routes goal
 
 ```mermaid
 graph TD
-    User([User Goal]) --> Agent[BrowserAgent]
+    User(["User Goal"]) --> Agent[BrowserAgent]
     Agent --> Reasoning[ReasoningEngine]
     Agent --> Router[PluginRouter]
     
-    subgraph Plugins [Plugins Registry]
+    subgraph Plugins ["Plugins Registry"]
         Router --> Bridge[BridgePlugin]
         Router --> Desktop[DesktopPlugin]
         Router --> Form[FormHandlerPlugin]
@@ -49,19 +49,19 @@ graph TD
         Router --> Access[AccessibilityPlugin]
     end
     
-    subgraph Runtimes [Execution Runtimes]
-        Desktop --> PyAutoGUI[PyAutoGUI OS-Level Control]
-        Visual --> Pillow[Pillow Image Processing]
-        Exporter --> OpenPyXL[openpyxl Excel Writer]
+    subgraph Runtimes ["Execution Runtimes"]
+        Desktop --> PyAutoGUI["PyAutoGUI OS-Level Control"]
+        Visual --> Pillow["Pillow Image Processing"]
+        Exporter --> OpenPyXL["openpyxl Excel Writer"]
         
-        Bridge -->|HTTP POST :10088| Server[WebBridge Server]
-        Server -->|WebSockets :10087| Extension[Chrome Extension]
+        Bridge -->|HTTP POST :10088| Server["WebBridge Server"]
+        Server -->|WebSockets :10087| Extension["Chrome Extension"]
         
-        Playwright[Playwright Async Runtime]
+        Playwright["Playwright Async Runtime"]
     end
 
     Reasoning -->|Cognitive Loop| Router
-    Reasoning -->|Memory Read/Write| Memory[(data/learning_memory.json)]
+    Reasoning -->|Memory Read/Write| Memory[("Memory/data/learning_memory.json")]
 ```
 
 ---
