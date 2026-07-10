@@ -1,5 +1,5 @@
 from typing import Dict, Any
-from browser_runtime.tools.base_tool import BrowserTool
+from Browser.tools.base_tool import BrowserTool
 
 class HoverTool(BrowserTool):
     """Tool wrapper to hover cursor over page elements."""

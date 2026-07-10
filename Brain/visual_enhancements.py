@@ -57,7 +57,7 @@ class VisualEnhancementsPlugin(BrowserPlugin):
         if not filename.endswith(".png"):
             filename += ".png"
             
-        output_dir = Path("data/screenshots")
+        output_dir = Path("Memory/data/screenshots")
         output_dir.mkdir(parents=True, exist_ok=True)
         filepath = output_dir / filename
 
@@ -126,7 +126,7 @@ class VisualEnhancementsPlugin(BrowserPlugin):
         if not filename.endswith(".png"):
             filename += ".png"
             
-        output_dir = Path("data/screenshots")
+        output_dir = Path("Memory/data/screenshots")
         output_dir.mkdir(parents=True, exist_ok=True)
         filepath = output_dir / filename
         

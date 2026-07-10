@@ -112,7 +112,7 @@ class ActionExecutor:
                 # Trigger event concurrently (user must initiate download click via action sequence)
                 pass
             download = await download_info.value
-            save_path = action.args.get("save_path", f"data/downloads/{download.suggested_filename}")
+            save_path = action.args.get("save_path", f"Memory/data/downloads/{download.suggested_filename}")
             await download.save_as(save_path)
             return {"filename": download.suggested_filename, "save_path": save_path}
             

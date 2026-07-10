@@ -10,6 +10,8 @@ class ReasoningEngine:
 
     def __init__(self, router):
         self.router = router
+        from Memory.learning_loop import LearningLoop
+        self.learning_loop = LearningLoop()
 
     def observe(self) -> dict:
         """Step 1: Observe - Capture DOM snapshot and current active tab details."""
@@ -82,14 +84,52 @@ class ReasoningEngine:
         return action_text
 
     def act(self, action_text: str) -> dict:
-        """Step 4: Act - Execute the chosen action via the plugin router."""
-        print(f"[ReasoningEngine] [Act] Executing action command: '{action_text}'")
+        """Step 4: Act - Execute the chosen action via the plugin router with self-learning and self-solving."""
+        current_url = ""
+        if "bridge" in self.router.plugins:
+            url_res = self.router.plugins["bridge"].execute("url")
+            if isinstance(url_res, dict):
+                current_url = url_res.get("url", "")
+                
+        exec_action = action_text
+        learned_action = self.learning_loop.get_learned_solution(current_url, action_text)
+        if learned_action:
+            print(f"[ReasoningEngine] Applying learned correction: '{action_text}' -> '{learned_action}'")
+            exec_action = learned_action
+
+        print(f"[ReasoningEngine] [Act] Executing action command: '{exec_action}'")
+        result = self._raw_act(exec_action)
+
+        if isinstance(result, dict) and "error" in result:
+            healed_res = self.learning_loop.attempt_auto_heal(
+                self.router, current_url, action_text, result["error"]
+            )
+            if healed_res and "error" not in healed_res:
+                print("[ReasoningEngine] Self-healing succeeded! Proceeding with task.")
+                return healed_res
+
+        return result
+
+    def _raw_act(self, action_text: str) -> dict:
         parts = action_text.split(" ", 1)
         cmd = parts[0].lower()
         args = parts[1] if len(parts) > 1 else ""
         
         if cmd == "click":
             return self.router.route("click", selector=args)
+        elif cmd == "click_coordinates":
+            sub_parts = args.split(" ")
+            x = int(sub_parts[0])
+            y = int(sub_parts[1])
+            js_code = f"""
+            (() => {{
+                const el = document.elementFromPoint({x}, {y});
+                if (!el) return {{ error: "No element at coordinates" }};
+                el.dispatchEvent(new MouseEvent('click', {{bubbles: true, cancelable: true, view: window}}));
+                return {{ success: true }};
+            }})()
+            """
+            return self.router.plugins["bridge"].execute("evaluate", code=js_code)
         elif cmd == "fill":
             sub_parts = args.split(" ", 1)
             sel = sub_parts[0] if len(sub_parts) > 0 else ""

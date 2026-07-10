@@ -1,6 +1,6 @@
 import os
 from playwright.async_api import Page
-from browser_runtime.exceptions import ElementInteractionError
+from Browser.exceptions import ElementInteractionError
 
 class UploadHandler:
     """Utility class to validate and handle file upload workflows."""

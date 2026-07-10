@@ -95,7 +95,7 @@ class CrawlerPlugin(BrowserPlugin):
                         queue.append((clean_url, depth + 1))
 
         # Save output
-        output_dir = Path("data/crawls")
+        output_dir = Path("Memory/data/crawls")
         output_dir.mkdir(parents=True, exist_ok=True)
         output_file = output_dir / f"crawl_{int(time.time())}.json"
         

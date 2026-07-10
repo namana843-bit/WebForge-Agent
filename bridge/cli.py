@@ -1,18 +1,22 @@
-#!/usr/bin/env python3
-"""Opencode WebBridge CLI - control browser from command line."""
+import sys
+from pathlib import Path
+project_root = Path(__file__).resolve().parent
+if project_root.name in ["Brain", "Browser", "Bridge", "bridge", "Memory", "Config"]:
+    project_root = project_root.parent
+sys.path.insert(0, str(project_root))
+for sub in ["Brain", "Browser", "Bridge", "bridge", "Memory", "Config"]:
+    sys.path.insert(0, str(project_root / sub))
 
 import argparse
 import json
-import sys
 import os
 from datetime import datetime
-from pathlib import Path
 
 import urllib.request
 import urllib.error
 
 BRIDGE_URL = os.environ.get("WEBBRIDGE_URL", "http://127.0.0.1:10088")
-SCREENSHOT_DIR = Path("data/screenshots")
+SCREENSHOT_DIR = Path("Memory/data/screenshots")
 SCREENSHOT_DIR.mkdir(parents=True, exist_ok=True)
 PID_FILE = Path(__file__).parent / ".bridge.pid"
 

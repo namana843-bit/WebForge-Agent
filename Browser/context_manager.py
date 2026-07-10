@@ -1,6 +1,6 @@
 from typing import List, Dict, Any
 from playwright.async_api import BrowserContext, Page
-from browser_runtime.config import BrowserConfig
+from Config.config import BrowserConfig
 
 class ContextManager:
     """Manages tab isolation, proxy rules, cookies, and page contexts."""

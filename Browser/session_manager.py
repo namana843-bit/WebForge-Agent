@@ -1,8 +1,8 @@
 from typing import Dict
-from browser_runtime.core.browser_manager import BrowserManager
-from browser_runtime.core.context_manager import ContextManager
-from browser_runtime.config import BrowserConfig
-from browser_runtime.exceptions import SessionNotFoundError
+from Browser.browser_manager import BrowserManager
+from Browser.context_manager import ContextManager
+from Config.config import BrowserConfig
+from Browser.exceptions import SessionNotFoundError
 
 class SessionManager:
     """Manages active contexts (sessions) mapped by unique identifiers."""

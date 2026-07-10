@@ -1,5 +1,5 @@
 from playwright.async_api import Page, Download
-from browser_runtime.exceptions import PageNavigationError, ElementInteractionError
+from Browser.exceptions import PageNavigationError, ElementInteractionError
 
 class PageManager:
     """Manages page-level operations (navigation, interaction, events)."""

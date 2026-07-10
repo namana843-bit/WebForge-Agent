@@ -5,7 +5,7 @@
     "webbridge-mcp": {
       "command": "python",
       "args": [
-        "c:/Users/Naman/Downloads/broweser/mcp_server.py"
+        "c:/Users/Naman/Downloads/learn something/broweser/mcp_server.py"
       ]
     }
   }

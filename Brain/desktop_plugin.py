@@ -63,7 +63,7 @@ class DesktopPlugin(BrowserPlugin):
                 if not name.endswith(".png"):
                     name += ".png"
                 
-                output_dir = Path("data/screenshots")
+                output_dir = Path("Memory/data/screenshots")
                 output_dir.mkdir(parents=True, exist_ok=True)
                 filepath = output_dir / name
                 

@@ -562,7 +562,7 @@ def handle_call_tool(req_id, tool_name, arguments):
     elif tool_name == "download":
         import os
         from pathlib import Path
-        down_dir = Path("data/downloads")
+        down_dir = Path("Memory/data/downloads")
         files = []
         if down_dir.exists():
             files = [f.name for f in down_dir.iterdir() if f.is_file()]

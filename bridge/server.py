@@ -1,13 +1,20 @@
+import sys
+from pathlib import Path
+project_root = Path(__file__).resolve().parent
+if project_root.name in ["Brain", "Browser", "Bridge", "bridge", "Memory", "Config"]:
+    project_root = project_root.parent
+sys.path.insert(0, str(project_root))
+for sub in ["Brain", "Browser", "Bridge", "bridge", "Memory", "Config"]:
+    sys.path.insert(0, str(project_root / sub))
+
 import asyncio
 import json
 import os
-import sys
 import base64
 import re
 import argparse
 import logging
 from datetime import datetime
-from pathlib import Path
 from typing import Any, Optional
 from urllib.parse import urlparse, quote
 
@@ -17,7 +24,7 @@ from websockets.asyncio.server import serve
 # --- Config ---
 WS_PORT = 10087
 HTTP_PORT = 10088
-SCREENSHOT_DIR = Path("data/screenshots")
+SCREENSHOT_DIR = Path("Memory/data/screenshots")
 SCREENSHOT_DIR.mkdir(parents=True, exist_ok=True)
 MAX_BODY_SIZE = 10 * 1024 * 1024
 LOG_FILE: Optional[Path] = None

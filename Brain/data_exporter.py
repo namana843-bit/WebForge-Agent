@@ -111,7 +111,7 @@ class DataExporterPlugin(BrowserPlugin):
 
         # Generate default path if none provided
         if not output_path:
-            output_dir = Path("data/exports")
+            output_dir = Path("Memory/data/exports")
             output_dir.mkdir(parents=True, exist_ok=True)
             output_path = output_dir / f"export_{int(time.time())}.{fmt}"
         else:
@@ -162,7 +162,7 @@ class DataExporterPlugin(BrowserPlugin):
             step = 1
             while not stop_event.is_set():
                 out_name = filename or f"scheduled_{schedule_id}_step{step}.{fmt}"
-                output_dir = Path("data/exports/scheduled")
+                output_dir = Path("Memory/data/exports/scheduled")
                 output_dir.mkdir(parents=True, exist_ok=True)
                 output_path = output_dir / out_name
                 

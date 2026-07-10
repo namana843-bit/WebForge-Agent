@@ -1,5 +1,11 @@
-#!/usr/bin/env python3
-"""Opencode Browser Agent Client - direct scripting and automation with Alibaba Page-Agent."""
+import sys
+from pathlib import Path
+project_root = Path(__file__).resolve().parent
+if project_root.name in ["Brain", "Browser", "Bridge", "Memory", "Config"]:
+    project_root = project_root.parent
+sys.path.insert(0, str(project_root))
+for sub in ["Brain", "Browser", "Bridge", "Memory", "Config"]:
+    sys.path.insert(0, str(project_root / sub))
 
 import json
 import urllib.request
@@ -7,7 +13,6 @@ import urllib.error
 import time
 import os
 import re
-from pathlib import Path
 from plugin_interface import BrowserPlugin
 from router import PluginRouter
 from reasoning import ReasoningEngine
@@ -66,7 +71,7 @@ class BrowserAgent:
 
     def __init__(self, bridge_url="http://127.0.0.1:10088"):
         self.bridge_url = bridge_url
-        self.screenshot_dir = Path("data/screenshots")
+        self.screenshot_dir = Path("Memory/data/screenshots")
         self.screenshot_dir.mkdir(parents=True, exist_ok=True)
         
         # Plugins registration
@@ -209,7 +214,7 @@ class BrowserAgent:
             
         # 3. Save to JSON file
         if not output_file:
-            output_dir = Path("data/scraped")
+            output_dir = Path("Memory/data/scraped")
             output_dir.mkdir(parents=True, exist_ok=True)
             output_file = output_dir / f"scraped_{ts}.json"
         else:

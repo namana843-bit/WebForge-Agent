@@ -1,5 +1,5 @@
 from typing import Dict, Any
-from browser_runtime.tools.base_tool import BrowserTool
+from Browser.tools.base_tool import BrowserTool
 
 class TypeTool(BrowserTool):
     """Tool wrapper to execute input typing on text fields."""

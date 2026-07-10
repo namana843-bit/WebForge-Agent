@@ -1,5 +1,5 @@
 from typing import Dict, Any
-from browser_runtime.tools.base_tool import BrowserTool
+from Browser.tools.base_tool import BrowserTool
 
 class ClickTool(BrowserTool):
     """Tool wrapper to execute mouse clicks on elements."""

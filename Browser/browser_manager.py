@@ -1,7 +1,7 @@
 import asyncio
 from playwright.async_api import async_playwright, Playwright, Browser
-from browser_runtime.config import BrowserConfig
-from browser_runtime.exceptions import BrowserInitializationError
+from Config.config import BrowserConfig
+from Browser.exceptions import BrowserInitializationError
 
 class BrowserManager:
     """Manages Playwright initialization and Browser instance lifecycles."""
