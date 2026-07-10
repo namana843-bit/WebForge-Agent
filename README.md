@@ -73,42 +73,46 @@ graph TD
 ├── .agents/                    # Workspace agent configurations
 ├── .claude/                    # Tool execution and terminal hook files
 ├── .opencode/                  # Opencode specific metadata and skills
-├── bridge/                     # WebBridge Server & CLI components
+├── Brain/                      # Core cognitive routing, agent logic, and plugin modules
+│   ├── reasoning.py            # Cognitive planner logic
+│   ├── router.py               # Plugin action router
+│   ├── plugin_interface.py     # Abstract base class for plugins
+│   ├── accessibility_plugin.py # Web Speech API voice control plugin
+│   ├── crawler.py              # Domain-locked recursive crawler agent
+│   ├── data_exporter.py        # Scheduler-enabled multi-format data exporter
+│   ├── desktop_plugin.py       # PyAutoGUI-based system controls
+│   ├── form_handler.py         # Form autofill and validation module
+│   └── visual_enhancements.py  # Screenshot stitching, diffing, and tagging
+├── Browser/                    # Playwright browser automation backend
+│   ├── action_executor.py      # Maps abstract action schemas to Playwright APIs
+│   ├── browser_manager.py      # Playwright launcher wrapper
+│   ├── context_manager.py      # Manages cookies, proxy rules, and tabs
+│   ├── page_manager.py         # Controls navigation and interactive DOM elements
+│   ├── session_manager.py      # Orchestrates multiple browser context sessions
+│   ├── state_validator.py      # Validates browser page loading states
+│   ├── exceptions.py           # Standard project exception declarations
+│   ├── tools/                  # Extensible action tools (click, hover, type)
+│   └── utils/                  # DOM parsing, upload & download utilities
+├── Bridge/                     # WebBridge Server & CLI components
 │   ├── extension/              # Chrome browser extension source code
 │   ├── cli.py                  # CLI utility to send commands to the WebBridge
 │   ├── server.py               # HTTP/WebSocket gateway server (Ports 10088 / 10087)
 │   ├── start.ps1               # Startup script for WebBridge Server (Windows PowerShell)
 │   └── status.ps1              # Health check status script for WebBridge
-├── browser_runtime/            # Playwright browser automation backend
-│   ├── core/                   # Browser, Session, and Page lifecycles
-│   │   ├── action_executor.py  # Maps abstract action schemas to Playwright APIs
-│   │   ├── browser_manager.py  # Playwright launcher wrapper
-│   │   ├── context_manager.py  # Manages cookies, proxy rules, and tabs
-│   │   ├── learning_loop.py    # Auto-healing engine and memory tracking
-│   │   ├── page_manager.py     # Controls navigation and interactive DOM elements
-│   │   └── session_manager.py  # Orchestrates multiple browser context sessions
-│   ├── tools/                  # Extensible action tools (click, hover, type)
-│   ├── utils/                  # DOM parsing, upload & download utilities
+├── Memory/                     # Self-learning loop corrections mapping and output files
+│   ├── learning_loop.py        # Auto-healing engine and memory tracking
+│   └── data/                   # Local file outputs (auto-created)
+│       ├── exports/            # CSV, JSON, and Excel data outputs
+│       ├── screenshots/        # Page, element, and visual diff images
+│       └── scraped/            # Extracted JSON scrape files
+├── Config/                     # Configuration schemas and metadata
 │   ├── config.py               # Viewport, proxy, and timeout configurations
-│   └── exceptions.py           # Standard project exception declarations
-├── data/                       # Local file outputs (auto-created)
-│   ├── exports/                # CSV, JSON, and Excel data outputs
-│   ├── screenshots/            # Page, element, and visual diff images
-│   ├── scraped/                # Extracted JSON scrape files
-│   └── learning_memory.json    # Self-learning loop corrections mapping
-├── accessibility_plugin.py     # Web Speech API voice control plugin
+│   ├── mcp_config.json         # Claude Desktop MCP configuration layout
+│   └── opencode.json           # Configures AI subagent profiles
+├── Prompts/                    # Prompt templates
+│   └── system_prompt.md        # System instructions and prompt templates
 ├── agent.py                    # Main agent orchestration and interactive terminal
-├── crawler.py                  # Domain-locked recursive crawler agent
-├── data_exporter.py            # Scheduler-enabled multi-format data exporter
-├── desktop_plugin.py           # PyAutoGUI-based system controls
-├── form_handler.py             # Form autofill and validation module
-├── mcp_config.json             # Claude Desktop MCP configuration layout
-├── mcp_server.py               # Model Context Protocol server entry point
-├── opencode.json               # Configures AI subagent profiles (Architect, Debugger, etc.)
-├── plugin_interface.py         # Abstract base class for plugins
-├── reasoning.py                # Cognitive planner logic
-├── router.py                   # Plugin action router
-└── visual_enhancements.py      # Screenshot stitching, diffing, and tagging
+└── mcp_server.py               # Model Context Protocol server entry point
 ```
 
 ---
