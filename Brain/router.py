@@ -3,6 +3,36 @@
 
 import inspect
 
+# action -> plugin name
+ACTION_PLUGINS = {
+    "navigate": "bridge",
+    "click": "bridge",
+    "fill": "bridge",
+    "snapshot": "bridge",
+    "screenshot": "bridge",
+    "scroll": "bridge",
+    "understand": "page_agent",
+    "desktop_click": "desktop",
+    "desktop_write": "desktop",
+    "desktop_press": "desktop",
+    "desktop_screenshot": "desktop",
+    "desktop_move": "desktop",
+    "desktop_scroll": "desktop",
+    "smart_fill": "form",
+    "smart_fill_nl": "form",
+    "full_page_screenshot": "visual",
+    "element_screenshot": "visual",
+    "visual_diff": "visual",
+    "annotate_image": "visual",
+    "export_data": "exporter",
+    "schedule_export": "exporter",
+    "crawl": "crawler",
+    "start_voice_control": "accessibility",
+    "swarm_spawn": "swarm",
+    "create_api": "web_to_api",
+}
+
+
 class PluginRouter:
     """Routes execution commands to the appropriate registered browser plugin."""
 
@@ -15,81 +45,27 @@ class PluginRouter:
 
     def route(self, action: str, **kwargs):
         """Routes the action to the corresponding plugin based on type."""
-        low_level_actions = ["navigate", "click", "fill", "snapshot", "screenshot", "scroll"]
-        desktop_actions = ["desktop_click", "desktop_write", "desktop_press", "desktop_screenshot", "desktop_move", "desktop_scroll"]
-        visual_actions = ["full_page_screenshot", "element_screenshot", "visual_diff", "annotate_image"]
-        
-        if action in low_level_actions:
-            if "bridge" in self.plugins:
-                plugin = self.plugins["bridge"]
-                if action == "snapshot":
-                    return plugin.get_snapshot()
-                elif action == "screenshot":
-                    return plugin.screenshot(kwargs.get("filename"))
-                else:
-                    method = getattr(plugin, action)
-                    sig = inspect.signature(method)
-                    pass_args = {k: v for k, v in kwargs.items() if k in sig.parameters}
-                    return method(**pass_args)
-            else:
-                return {"error": "Bridge plugin not registered for low-level actions"}
+        plugin = self.plugins.get(ACTION_PLUGINS.get(action))
+        if plugin is None:
+            return {"error": f"Unknown action: {action}"}
 
-        elif action in desktop_actions:
-            if "desktop" in self.plugins:
-                plugin = self.plugins["desktop"]
-                method = getattr(plugin, "execute")
-                return method(action, **kwargs)
-            else:
-                return {"error": "Desktop plugin not registered"}
+        # Snapshot distinguishes itself from the standard Plugin.execute() call.
+        if action == "snapshot":
+            return plugin.get_snapshot()
 
-        elif action in ["smart_fill", "smart_fill_nl"]:
-            if "form" in self.plugins:
-                plugin = self.plugins["form"]
-                return plugin.execute(action, **kwargs)
-            else:
-                return {"error": "Form plugin not registered"}
+        # Screenshot and understand are called directly on the plugin instance.
+        if action in ("screenshot", "understand"):
+            method = getattr(plugin, action)
+            sig = inspect.signature(method)
+            pass_args = {k: v for k, v in kwargs.items() if k in sig.parameters}
+            return method(**pass_args)
 
-        elif action in visual_actions:
-            if "visual" in self.plugins:
-                plugin = self.plugins["visual"]
-                return plugin.execute(action, **kwargs)
-            else:
-                return {"error": "Visual plugin not registered"}
+        # Low-level bridge actions: invoke the dedicated method.
+        if ACTION_PLUGINS[action] == "bridge":
+            method = getattr(plugin, action)
+            sig = inspect.signature(method)
+            pass_args = {k: v for k, v in kwargs.items() if k in sig.parameters}
+            return method(**pass_args)
 
-        elif action in ["export_data", "schedule_export"]:
-            if "exporter" in self.plugins:
-                plugin = self.plugins["exporter"]
-                return plugin.execute(action, **kwargs)
-            else:
-                return {"error": "Exporter plugin not registered"}
-
-        elif action == "crawl":
-            if "crawler" in self.plugins:
-                plugin = self.plugins["crawler"]
-                return plugin.execute(action, **kwargs)
-            else:
-                return {"error": "Crawler plugin not registered"}
-
-        elif action == "start_voice_control":
-            if "accessibility" in self.plugins:
-                plugin = self.plugins["accessibility"]
-                return plugin.execute(action, **kwargs)
-            else:
-                return {"error": "Accessibility plugin not registered"}
-
-        elif action == "swarm_spawn":
-            if "swarm" in self.plugins:
-                plugin = self.plugins["swarm"]
-                return plugin.execute(action, **kwargs)
-            else:
-                return {"error": "Swarm plugin not registered"}
-
-        elif action == "create_api":
-            if "web_to_api" in self.plugins:
-                plugin = self.plugins["web_to_api"]
-                return plugin.execute(action, **kwargs)
-            else:
-                return {"error": "WebToApi plugin not registered"}
-                
-        return {"error": f"Unknown action: {action}"}
-
+        # Everything else routes through the generic Plugin.execute() interface.
+        return plugin.execute(action, **kwargs)
