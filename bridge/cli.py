@@ -53,8 +53,10 @@ def cmd_status(args):
             print(f"Port: {data.get('port', '?')}")
     except urllib.error.URLError as e:
         print(f"Bridge: Connection failed ({e.reason})")
+        print("Hint: start the bridge server first -> python bridge/server.py (or .\\bridge\\start.ps1)")
     except Exception as e:
         print(f"Bridge: {e}")
+        print("Hint: start the bridge server first -> python bridge/server.py (or .\\bridge\\start.ps1)")
 
 
 def cmd_navigate(args):
