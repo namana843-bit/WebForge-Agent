@@ -22,6 +22,8 @@ from visual_enhancements import VisualEnhancementsPlugin
 from data_exporter import DataExporterPlugin
 from crawler import CrawlerPlugin
 from accessibility_plugin import AccessibilityPlugin
+from swarm import SwarmPlugin
+from web_to_api import WebToApiPlugin
 
 class BridgePlugin(BrowserPlugin):
     """Plugin to communicate with the low-level Chrome extension bridge."""
@@ -104,6 +106,14 @@ class BrowserAgent:
         # Accessibility plugin
         self.accessibility = AccessibilityPlugin(self)
         self.router.register_plugin("accessibility", self.accessibility)
+        
+        # Swarm plugin
+        self.swarm = SwarmPlugin(self)
+        self.router.register_plugin("swarm", self.swarm)
+        
+        # WebToApi plugin
+        self.web_to_api = WebToApiPlugin(self)
+        self.router.register_plugin("web_to_api", self.web_to_api)
         
         # Reasoning Engine
         self.reasoning = ReasoningEngine(self.router)
@@ -285,6 +295,8 @@ def interactive_loop():
     print("  export <format> <data>     Export data to csv, json, excel")
     print("  sched_export <sec> <fmt> <data> Schedule exports periodically")
     print("  crawl <url> [pages] [depth] Domain-specific web crawler agent")
+    print("  swarm_spawn <task1,task2>  Spawn multiple worker agents")
+    print("  create_api <instruction>   Generate REST endpoint for task")
     print("  dclick <x> <y>             Desktop mouse click")
     print("  dwrite <text>              Desktop type text")
     print("  dpress <key>               Desktop press key")
@@ -431,6 +443,12 @@ def interactive_loop():
                 print(json.dumps(res, indent=2))
             elif cmd == "voice_control":
                 res = agent.router.route("start_voice_control")
+                print(json.dumps(res, indent=2))
+            elif cmd == "swarm_spawn":
+                res = agent.router.route("swarm_spawn", instruction=args)
+                print(json.dumps(res, indent=2))
+            elif cmd == "create_api":
+                res = agent.router.route("create_api", instruction=args)
                 print(json.dumps(res, indent=2))
             else:
                 print(f"Unknown command: {cmd}")

@@ -76,5 +76,20 @@ class PluginRouter:
                 return plugin.execute(action, **kwargs)
             else:
                 return {"error": "Accessibility plugin not registered"}
+
+        elif action == "swarm_spawn":
+            if "swarm" in self.plugins:
+                plugin = self.plugins["swarm"]
+                return plugin.execute(action, **kwargs)
+            else:
+                return {"error": "Swarm plugin not registered"}
+
+        elif action == "create_api":
+            if "web_to_api" in self.plugins:
+                plugin = self.plugins["web_to_api"]
+                return plugin.execute(action, **kwargs)
+            else:
+                return {"error": "WebToApi plugin not registered"}
+                
         return {"error": f"Unknown action: {action}"}
 
