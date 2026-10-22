@@ -451,7 +451,7 @@ def handle_call_tool(req_id, tool_name, arguments):
                 if (!window.__pageAgentInstance) {{
                     window.__pageAgentInstance = new PageAgent({{
                         model: "qwen3.5-plus",
-                        apiKey: "demo"
+                        apiKey: "{__import__('os').environ.get('PAGE_AGENT_API_KEY', 'demo')}"
                     }});
                 }}
                 try {{

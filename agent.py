@@ -68,6 +68,58 @@ class BridgePlugin(BrowserPlugin):
     def scroll(self, selector=None, x=None, y=None):
         return self.execute("scroll", selector=selector, x=x, y=y)
 
+PAGE_AGENT_INJECT_JS = """
+(async (promptJson) => {
+    if (typeof PageAgent === 'undefined') {
+        const s = document.createElement('script');
+        s.src = "https://cdn.jsdelivr.net/npm/page-agent@latest/dist/iife/page-agent.demo.js";
+        s.crossOrigin = "anonymous";
+        try {
+            await new Promise((resolve, reject) => {
+                s.onload = resolve;
+                s.onerror = () => reject(new Error("Failed to load Page-Agent"));
+                document.head.appendChild(s);
+            });
+        } catch (e) { return { error: e.message }; }
+    }
+    if (!window.__pageAgentInstance) {
+        window.__pageAgentInstance = new PageAgent({
+            model: "qwen3.5-plus",
+            apiKey: "demo"
+        });
+    }
+    try {
+        const res = await window.__pageAgentInstance.understand(promptJson);
+        return { success: true, result: res };
+    } catch (e) { return { error: e.message }; }
+})
+"""
+
+
+class PageAgentBridge:
+    """Queries the in-page Alibaba Page-Agent instance via the bridge's evaluate action."""
+
+    def __init__(self, bridge: BridgePlugin, fallback_chars: int = 2000):
+        self.bridge = bridge
+        self.fallback_chars = fallback_chars
+
+    def understand(self, prompt: str):
+        prompt_js = json.dumps(prompt)
+        js_code = f"({PAGE_AGENT_INJECT_JS})({prompt_js})"
+        res = self.bridge.execute("evaluate", code=js_code)
+        if isinstance(res, dict) and ("error" in res or not res.get("success")):
+            text_res = self.bridge.execute("text")
+            page_text = ""
+            if isinstance(text_res, dict):
+                page_text = text_res.get("result") or text_res.get("text") or ""
+            return {
+                "success": True,
+                "raw_text_preview": str(page_text)[: self.fallback_chars],
+                "note": "Page-Agent unavailable; returning raw text preview",
+            }
+        return res
+
+
 class BrowserAgent:
     """Orchestrator class coordinating plugins for browser automation and intelligence."""
 
@@ -76,9 +128,12 @@ class BrowserAgent:
         self.screenshot_dir = Path("Memory/data/screenshots")
         self.screenshot_dir.mkdir(parents=True, exist_ok=True)
         
-        # Plugins registration
         self.bridge = BridgePlugin(self)
-        
+
+        # Page-Agent bridge (used by scrape, form_handler, and reasoning)
+        self.page_agent = PageAgentBridge(self.bridge)
+        self.router.register_plugin("page_agent", self.page_agent)
+
         # Plugin Router
         self.router = PluginRouter()
         self.router.register_plugin("bridge", self.bridge)
@@ -271,7 +326,7 @@ class BrowserAgent:
 def interactive_loop():
     agent = BrowserAgent()
     print("==================================================")
-    print("   Opencode Browser Agent - Interactive Terminal  ")
+    print("   WebForge Browser Agent - Interactive Terminal  ")
     print("==================================================")
     print("Commands:")
     print("  goto <url>                 Navigate to website")
